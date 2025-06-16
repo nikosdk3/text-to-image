@@ -24,7 +24,7 @@ class BaseGaussianDiffusion(nn.Module):
         super().__init__()
 
         if beta_schedule == "cosine":
-            betas = co
+            betas = cosine_beta_schedule(timesteps)
 
 
 class TextToImage(nn.Module):
