@@ -1,3 +1,5 @@
+<img src="./imagen.png" width="450px"></img>
+
 ## Text to Image Neural Network (WIP)
 
 Implementation of Google's <a href="https://imagen.research.google/">Imagen</a> in PyTorch
