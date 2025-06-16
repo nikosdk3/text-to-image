@@ -1,4 +1,4 @@
-## Text to Image Neural Network
+## Text to Image Neural Network (WIP)
 
 Implementation of Google's <a href="https://imagen.research.google/">Imagen</a> in PyTorch
 
