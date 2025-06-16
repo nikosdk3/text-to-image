@@ -2,6 +2,10 @@
 
 Implementation of Google's <a href="https://imagen.research.google/">Imagen</a> in PyTorch
 
+By architecture design, it is much simpler than DALL-E2. It uses a cascading DDPM on text embeddings which are generated from a pretrained T5 LLM. It also improves the clipping for classifier-free guidance, as well as noise level conditioning to make the model aware of the noise added in each step.
+
+This process was improvement from DALL-E2 because instead of using CLIP and a prior network, Imagen uses strong embeddings from a pretrained model like T5 and a diffusion model to generate from these embeddings.
+
 ## Citations
 
 ```bibtex
