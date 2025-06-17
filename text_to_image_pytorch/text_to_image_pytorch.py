@@ -1,3 +1,4 @@
+from matplotlib import axis
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -19,12 +20,46 @@ def cosine_beta_schedule(timesteps, s=0.008):
     return torch.clip(betas, 0, 0.999)
 
 
+def linear_beta_schedule(timesteps):
+    scale = timesteps / 1000
+    beta_start = scale * 0.0001
+    beta_end = scale * 0.02
+    return torch.linspace(beta_start, beta_end, timesteps, dtype=torch.float64)
+
+
+def quadratic_beta_schedule(timesteps):
+    scale = timesteps / 1000
+    beta_start = scale * 0.0001
+    beta_end = scale * 0.02
+    return (
+        torch.linspace(beta_start**2, beta_end**2, timesteps, dtype=torch.float64) ** 2
+    )
+
+
+def sigmoid_beta_schedule(timesteps):
+    scale = timesteps / 1000
+    beta_start = timesteps * 0.0001
+    beta_end = timesteps * 0.02
+    betas = torch.linspace(-6, 6, timesteps, dtype=torch.float64)
+    return torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
+
+
 class BaseGaussianDiffusion(nn.Module):
     def __init__(self, *, beta_schedule, timesteps, loss_type):
         super().__init__()
 
         if beta_schedule == "cosine":
             betas = cosine_beta_schedule(timesteps)
+        elif beta_schedule == "linear":
+            betas = linear_beta_schedule(timesteps)
+        elif beta_schedule == "quadratic":
+            betas = quadratic_beta_schedule(timesteps)
+        elif beta_schedule == "sigmoid":
+            betas = sigmoid_beta_schedule(timesteps)
+        elif beta_schedule == "jsd":
+            betas = 1.0 / torch.linspace(timesteps, 1, timesteps)
+        else:
+            raise NotImplementedError()
 
 
 class TextToImage(nn.Module):
