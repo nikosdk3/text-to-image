@@ -65,7 +65,7 @@ class BaseGaussianDiffusion(nn.Module):
         alphas_cumprod = torch.cumprod(alphas, dim=0)
         alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
 
-        timesteps, = betas.shape
+        (timesteps,) = betas.shape
         self.num_timesteps = int(timesteps)
 
         if loss_type == "l1":
@@ -78,6 +78,27 @@ class BaseGaussianDiffusion(nn.Module):
         self.loss_type = loss_type
         self.loss_fn = loss_fn
 
+        # Register buffer helper to cast double back to float
+
+        register_buffer = lambda name, val: self.register_buffer(
+            name, val.to(torch.float32)
+        )
+
+        register_buffer("betas", betas)
+        register_buffer("alphas_cumprod", alphas_cumprod)
+        register_buffer("alphas_cumprod_prev", alphas_cumprod_prev)
+        register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod))
+        register_buffer(
+            "sqrt_one_minus_alphas_cumprod", torch.sqrt(1.0 - alphas_cumprod)
+        )
+        register_buffer(
+            "log_one_minus_alphas_cumprod", torch.sqrt(1.0 - alphas_cumprod)
+        )
+        register_buffer("sqrt_recip_alphas_cumprod", torch.sqrt(1.0 / alphas_cumprod))
+        register_buffer(
+            "sqrt_recipm1_alphas_cumprod",
+            torch.sqrt(1.0 / (alphas_cumprod - 1.0)),
+        )
 
 
 class TextToImage(nn.Module):
