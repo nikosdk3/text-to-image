@@ -61,6 +61,24 @@ class BaseGaussianDiffusion(nn.Module):
         else:
             raise NotImplementedError()
 
+        alphas = 1.0 - betas
+        alphas_cumprod = torch.cumprod(alphas, dim=0)
+        alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
+
+        timesteps, = betas.shape
+        self.num_timesteps = int(timesteps)
+
+        if loss_type == "l1":
+            loss_fn = F.l1_loss
+        elif loss_type == "l2":
+            loss_fn = F.mse_loss
+        else:
+            raise NotImplementedError()
+
+        self.loss_type = loss_type
+        self.loss_fn = loss_fn
+
+
 
 class TextToImage(nn.Module):
     def __init__(self):
