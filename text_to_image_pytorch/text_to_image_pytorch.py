@@ -1,3 +1,4 @@
+from inspect import isfunction
 from matplotlib import axis
 import torch
 from torch import nn
@@ -6,6 +7,18 @@ import torch.nn.functional as F
 
 def exists(val):
     return val is not None
+
+
+def extract(a, t, x_shape):
+    b, *_ = t.shape
+    out = a.gather(-1, t)
+    return out.reshape(b, *(1,) * (len(x_shape) - 1))
+
+
+def default(val, d):
+    if exists(val):
+        return val
+    return d() if isfunction(d) else d
 
 
 def cosine_beta_schedule(timesteps, s=0.008):
@@ -97,7 +110,7 @@ class BaseGaussianDiffusion(nn.Module):
         register_buffer("sqrt_recip_alphas_cumprod", torch.sqrt(1.0 / alphas_cumprod))
         register_buffer(
             "sqrt_recipm1_alphas_cumprod",
-            torch.sqrt(1.0 / (alphas_cumprod - 1.0)),
+            torch.sqrt(1.0 / alphas_cumprod - 1.0),
         )
 
         posterior_variance = (
@@ -118,6 +131,32 @@ class BaseGaussianDiffusion(nn.Module):
         register_buffer(
             "posterior_mean_coef2",
             (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas) / (1.0 - alphas_cumprod),
+        )
+
+    def q_posterior(self, x_start, x_t, t):
+        posterior_mean = (
+            extract(self.posterior_mean_coef1, t, x_t.shape) * x_start
+            + extract(self.posterior_mean_coef2, t, x_t.shape) * x_t
+        )
+
+        posterior_variance = extract(self.posterior_variance, t, x_t.shape)
+        posterior_log_variance_clipped = extract(
+            self.posterior_log_variance_clipped, t, x_t.shape
+        )
+        return posterior_mean, posterior_variance, posterior_log_variance_clipped
+
+    def q_sample(self, x_start, t, noise=None):
+        noise = default(noise, lambda: torch.randn_like(x_start))
+
+        return (
+            extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
+            + extract(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise
+        )
+
+    def predict_start_from_noise(self, x_t, t, noise):
+        return (
+            extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t
+            - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * noise
         )
 
 
