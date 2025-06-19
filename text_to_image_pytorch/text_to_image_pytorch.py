@@ -100,6 +100,26 @@ class BaseGaussianDiffusion(nn.Module):
             torch.sqrt(1.0 / (alphas_cumprod - 1.0)),
         )
 
+        posterior_variance = (
+            betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
+        )
+
+        register_buffer("posterior_variance", posterior_variance)
+
+        # Posterior variance is 0 at first timestep, clamp the log to avoid error
+        register_buffer(
+            "posterior_log_variance_clipped",
+            torch.log(posterior_variance).clamp(min=1e-20),
+        )
+        register_buffer(
+            "posterior_mean_coef1",
+            betas * torch.sqrt(alphas_cumprod_prev) / (1.0 - alphas_cumprod),
+        )
+        register_buffer(
+            "posterior_mean_coef2",
+            (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas) / (1.0 - alphas_cumprod),
+        )
+
 
 class TextToImage(nn.Module):
     def __init__(self):
