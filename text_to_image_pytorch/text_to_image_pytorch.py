@@ -159,6 +159,7 @@ class BaseGaussianDiffusion(nn.Module):
             - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * noise
         )
 
+
 class LayerNorm(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -167,6 +168,19 @@ class LayerNorm(nn.Module):
 
     def forward(self, x):
         F.layer_norm(x, x[-1:], self.gamma, self.beta)
+
+
+class ChanLayerNorm(nn.Module):
+    def __init__(self, dim, eps=1e-5):
+        super().__init__()
+        self.eps = eps
+        self.g = nn.Parameter(torch.ones(1, dim, 1, 1))
+
+    def forward(self, x):
+        var = torch.var(x, dim=1, unbiased=False, keepdim=True)
+        mean = torch.mean(x, dim=1, keepdim=True)
+        return (x - mean) / (var + self.eps).sqrt() * self.g
+
 
 class TextToImage(nn.Module):
     def __init__(self):
